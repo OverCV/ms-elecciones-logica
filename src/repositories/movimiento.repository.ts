@@ -1,16 +1,22 @@
-import {inject} from '@loopback/core';
-import {DefaultCrudRepository} from '@loopback/repository';
+import {inject, Getter} from '@loopback/core';
+import {DefaultCrudRepository, repository, HasManyRepositoryFactory} from '@loopback/repository';
 import {MySqlDataSource} from '../datasources';
-import {Movimiento, MovimientoRelations} from '../models';
+import {Movimiento, MovimientoRelations, Candidato} from '../models';
+import {CandidatoRepository} from './candidato.repository';
 
 export class MovimientoRepository extends DefaultCrudRepository<
   Movimiento,
   typeof Movimiento.prototype.id,
   MovimientoRelations
 > {
+
+  public readonly candidatos: HasManyRepositoryFactory<Candidato, typeof Movimiento.prototype.id>;
+
   constructor(
-    @inject('datasources.mySQL') dataSource: MySqlDataSource,
+    @inject('datasources.mySQL') dataSource: MySqlDataSource, @repository.getter('CandidatoRepository') protected candidatoRepositoryGetter: Getter<CandidatoRepository>,
   ) {
     super(Movimiento, dataSource);
+    this.candidatos = this.createHasManyRepositoryFactoryFor('candidatos', candidatoRepositoryGetter,);
+    this.registerInclusionResolver('candidatos', this.candidatos.inclusionResolver);
   }
 }
